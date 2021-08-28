@@ -1,8 +1,7 @@
-from operator import mul
 from flask import Blueprint, jsonify, request
 import random
 
-from ..authentication import authentication
+from ..authentication import login_required
 from ..database import Tag, db
 from ..schema.tags import schema, update_schema
 from ..schema.todo import multiple
@@ -13,14 +12,14 @@ tags = Blueprint("tags", __name__)
 
 
 @tags.get("")
-@authentication.login_required
+@login_required
 def get_all():
     records = Tag.query.all()
     return jsonify(schema.from_objects(records))
 
 
 @tags.post("")
-@authentication.login_required
+@login_required
 def create():
     body = schema.load(request.json)
 
@@ -37,7 +36,7 @@ def create():
 
 
 @tags.put("/<int:tid>")
-@authentication.login_required
+@login_required
 def update(tid: int):
     body = update_schema.load(request.json)
     tag = Tag.query.get(tid)
@@ -55,7 +54,7 @@ def update(tid: int):
 
 
 @tags.delete("/<int:tid>")
-@authentication.login_required
+@login_required
 def delete(tid: int):
     tag = Tag.query.get(tid)
     db.session.delete(tag)
@@ -65,7 +64,7 @@ def delete(tid: int):
 
 
 @tags.get("/<int:tid>/todos")
-@authentication.login_required
+@login_required
 def get_todos(tid: int):
     tag = Tag.query.get(tid)
     return jsonify(multiple.from_objects(tag.todos))

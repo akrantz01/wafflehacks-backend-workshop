@@ -1,8 +1,7 @@
-from better_todos.database import category
 from flask import Blueprint, abort, jsonify, request
 from typing import List
 
-from ..authentication import authentication
+from ..authentication import login_required
 from ..database import Category, Tag, Todo, db
 from ..schema.todo import create_schema, multiple, single, update_schema
 
@@ -22,14 +21,14 @@ def load_tags(ids: List[int]) -> List[Tag]:
 
 
 @todos.get("")
-@authentication.login_required
+@login_required
 def get_all():
     records = Todo.query.all()
     return jsonify(multiple.from_objects(records))
 
 
 @todos.post("")
-@authentication.login_required
+@login_required
 def create():
     body = create_schema.load(request.json)
 
@@ -54,7 +53,7 @@ def create():
 
 
 @todos.get("/<int:tid>")
-@authentication.login_required
+@login_required
 def get(tid: int):
     todo = Todo.query.get(tid)
     if todo is None:
@@ -64,7 +63,7 @@ def get(tid: int):
 
 
 @todos.put("/<int:tid>")
-@authentication.login_required
+@login_required
 def update(tid: int):
     body = update_schema.load(request.json)
     todo = Todo.query.get(tid)
@@ -108,7 +107,7 @@ def update(tid: int):
 
 
 @todos.delete("/<int:tid>")
-@authentication.login_required
+@login_required
 def delete(tid: int):
     todo = Todo.query.get(tid)
     db.session.delete(todo)
@@ -118,7 +117,7 @@ def delete(tid: int):
 
 
 @todos.post("/<int:tid>/toggle")
-@authentication.login_required
+@login_required
 def toggle(tid: int):
     todo = Todo.query.get(tid)
     if todo is None:

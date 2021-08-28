@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from ..authentication import authentication
+from ..authentication import login_required
 from ..database import Category, db
 from ..schema.categories import schema, update_schema
 from ..schema.todo import multiple
@@ -9,14 +9,14 @@ categories = Blueprint("categories", __name__)
 
 
 @categories.get("")
-@authentication.login_required
+@login_required
 def get_all():
     records = Category.query.all()
     return jsonify(schema.from_objects(records))
 
 
 @categories.post("")
-@authentication.login_required
+@login_required
 def create():
     body = schema.load(request.json)
 
@@ -29,7 +29,7 @@ def create():
 
 
 @categories.put("/<int:cid>")
-@authentication.login_required
+@login_required
 def update(cid: int):
     body = update_schema.load(request.json)
     category = Category.query.get(cid)
@@ -51,7 +51,7 @@ def update(cid: int):
 
 
 @categories.delete("/<int:cid>")
-@authentication.login_required
+@login_required
 def delete(cid: int):
     category = Category.query.get(cid)
     db.session.delete(category)
@@ -61,7 +61,7 @@ def delete(cid: int):
 
 
 @categories.get("/<int:cid>/todos")
-@authentication.login_required
+@login_required
 def get_todos(cid: int):
     category = Category.query.get(cid)
     return jsonify(multiple.from_objects(category.todos))
