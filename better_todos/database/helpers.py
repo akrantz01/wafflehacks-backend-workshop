@@ -20,12 +20,18 @@ class TimeStamp(TypeDecorator):
     LOCAL_TIMEZONE = datetime.now().astimezone().tzinfo
 
     def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+
         if value.tzinfo is None:
             value = value.astimezone(self.LOCAL_TIMEZONE)
 
         return value.astimezone(timezone.utc)
 
     def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+
         if value.tzinfo is None:
             return value.replace(tzinfo=timezone.utc)
 

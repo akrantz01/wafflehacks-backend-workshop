@@ -9,6 +9,14 @@ init = ma.init_app
 class Base(ma.Schema):
     class Meta:
         unknown = EXCLUDE
+    
+    def __to_dict(self, obj: object) -> Dict[str, Any]:
+        """
+        Get the fields from an arbitrary object to be validated later
+        :param obj: the object to get fields from
+        :return: an unvalidated dict
+        """
+        return {field: getattr(obj, field) for field in self.fields}
 
     def from_object(self, obj: object) -> Dict[str, Any]:
         """
@@ -16,7 +24,7 @@ class Base(ma.Schema):
         :param obj: the object to get fields from
         :return: a validated dict
         """
-        return self.dump({field: getattr(obj, field) for field in self.fields})
+        return self.dump(self.__to_dict(obj))
 
     def from_objects(self, objs: List[object]) -> List[Dict[str, Any]]:
         """
@@ -24,4 +32,4 @@ class Base(ma.Schema):
         :param objs: the objects to get fields from
         :return: a list of validated dicts
         """
-        return self.dump([self.from_object(obj) for obj in objs], many=True)
+        return self.dump([self.__to_dict(obj) for obj in objs], many=True)

@@ -34,7 +34,8 @@ def http_exception(error: HTTPException):
 
 @app.errorhandler(ValidationError)
 def validation_exception(error: ValidationError):
-    return {"code": 400, "message": f"invalid field {error.field_name}"}, 400
+    print(error)
+    return {"code": 400, "message": "validation failed", "fields": error.normalized_messages()}, 400
 
 
 @app.errorhandler(IntegrityError)
