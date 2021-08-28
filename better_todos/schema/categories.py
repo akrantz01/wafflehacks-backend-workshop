@@ -7,7 +7,7 @@ from .base import Base
 class Category(Base):
     id = Integer(required=True, dump_only=True)
     name = String(required=True, validate=Length(min=1, max=64))
-    description = String()
+    description = String(allow_none=True)
 
 
 # Derived schemas

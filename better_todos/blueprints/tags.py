@@ -1,10 +1,13 @@
 from operator import mul
 from flask import Blueprint, jsonify, request
+import random
 
 from ..authentication import authentication
 from ..database import Tag, db
 from ..schema.tags import schema, update_schema
 from ..schema.todo import multiple
+
+DEFAULT_COLORS = ["ffb5e8", "b28dff", "85e3ff", "ffabab", "aff8db", "fff5ba"]
 
 tags = Blueprint("tags", __name__)
 
@@ -20,6 +23,10 @@ def get_all():
 @authentication.login_required
 def create():
     body = schema.load(request.json)
+
+    # Generate a color if one wasn't provided
+    if not body.get("color"):
+        body["color"] = random.choice(DEFAULT_COLORS)
 
     # Persist the tag
     tag = Tag(**body)
@@ -40,7 +47,7 @@ def update(tid: int):
         tag.name = body.get("name")
     if body.get("color"):
         tag.color = body.get("color")
-    
+
     # Persist the updates
     db.session.commit()
 

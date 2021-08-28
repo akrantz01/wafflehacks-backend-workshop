@@ -19,7 +19,9 @@ class Todo(db.Model):
     created_at = db.Column(
         TimeStamp(timezone=True), nullable=False, default=datetime.now
     )
-    last_updated = db.Column(TimeStamp(timezone=True), onupdate=datetime.now, default=datetime.now)
+    last_updated = db.Column(
+        TimeStamp(timezone=True), onupdate=datetime.now, default=datetime.now
+    )
 
     # Many-to-one relationship with an optional category
     category_id = db.Column(db.Integer, db.ForeignKey("category.id"), nullable=True)
@@ -29,5 +31,8 @@ class Todo(db.Model):
 
     # Many-to-many relationship with tags
     tags = db.relationship(
-        "Tag", secondary=tags_todos, lazy="subquery", backref=db.backref("todos", lazy=True)
+        "Tag",
+        secondary=tags_todos,
+        lazy="subquery",
+        backref=db.backref("todos", lazy=True),
     )

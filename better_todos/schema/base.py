@@ -9,7 +9,7 @@ init = ma.init_app
 class Base(ma.Schema):
     class Meta:
         unknown = EXCLUDE
-    
+
     def __to_dict(self, obj: object) -> Dict[str, Any]:
         """
         Get the fields from an arbitrary object to be validated later

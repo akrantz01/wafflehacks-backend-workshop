@@ -17,7 +17,7 @@ def load_tags(ids: List[int]) -> List[Tag]:
         if tag is None:
             abort(400)
         tags.append(tag)
-    
+
     return tags
 
 
@@ -37,7 +37,7 @@ def create():
     tags = []
     if body.get("tags"):
         tags = load_tags(body.pop("tags"))
-    
+
     # Resolve the category (if provided)
     category = None
     if body.get("category"):
@@ -123,7 +123,7 @@ def toggle(tid: int):
     todo = Todo.query.get(tid)
     if todo is None:
         abort(404)
-    
+
     todo.complete = not todo.complete
     db.session.commit()
 

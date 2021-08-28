@@ -23,7 +23,7 @@ class TodoModify(Base):
     title = String(required=True, validate=Length(min=1, max=128))
     content = String(required=False, allow_none=True)
     complete = Boolean(load_default=False)
-    due = AwareDateTime(format="iso")
+    due = AwareDateTime(format="iso", required=False, allow_none=True)
     category = Integer(required=False, allow_none=True)
     tags = List(Integer, required=True)
 

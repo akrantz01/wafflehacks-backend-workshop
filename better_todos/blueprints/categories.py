@@ -24,7 +24,7 @@ def create():
     category = Category(**body)
     db.session.add(category)
     db.session.commit()
-    
+
     return "", 201
 
 
@@ -37,12 +37,16 @@ def update(cid: int):
     # Change anything if needed
     if body.get("name"):
         category.name = body.get("name")
-    if body.get("description"):
-        category.description = body.get("description")
+
+    # Handle nullable fields
+    try:
+        category.description = body["description"]
+    except KeyError:
+        pass
 
     # Persist the updates
     db.session.commit()
-    
+
     return "", 204
 
 
