@@ -9,7 +9,7 @@ init = ma.init_app
 class Base(ma.Schema):
     class Meta:
         unknown = EXCLUDE
-    
+
     def from_object(self, obj: object) -> Dict[str, Any]:
         """
         Extract the fields from an arbitrary object
@@ -17,7 +17,7 @@ class Base(ma.Schema):
         :return: a validated dict
         """
         return self.dump({field: getattr(obj, field) for field in self.fields})
-    
+
     def from_objects(self, objs: List[object]) -> List[Dict[str, Any]]:
         """
         Extract the fields from an arbitrary set of objects
