@@ -9,5 +9,5 @@ class Tag(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), nulllable=False)
+    name = db.Column(db.String(64), nullable=False, unique=True)
     color = db.Column(db.String(6), nullable=False)

@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from .engine import db
-from .helpers import Timestamp, tags_todos
+from .helpers import TimeStamp, tags_todos
 
 
 class Todo(db.Model):
@@ -12,14 +12,14 @@ class Todo(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(128), nullable=False)
+    title = db.Column(db.String(128), nullable=False, unique=True)
     content = db.Column(db.Text)
     complete = db.Column(db.Boolean, default=False, nullable=False)
-    due = db.Column(Timestamp(timezone=True), nullable=True)
+    due = db.Column(TimeStamp(timezone=True), nullable=True)
     created_at = db.Column(
-        Timestamp(timezone=True), nullable=False, default=datetime.now
+        TimeStamp(timezone=True), nullable=False, default=datetime.now
     )
-    last_updated = db.Column(Timestamp(timezone=True), onupdate=datetime.now)
+    last_updated = db.Column(TimeStamp(timezone=True), onupdate=datetime.now)
 
     # Many-to-one relationship with an optional category
     category_id = db.Column(db.Integer, db.ForeignKey("category.id"), nullable=True)
