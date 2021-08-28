@@ -1,7 +1,7 @@
 from .engine import db
 
 
-class Categoy(db.Model):
+class Category(db.Model):
     """
     The representation of a category in the database
 
