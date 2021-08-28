@@ -1,0 +1,886 @@
+openapi: 3.0.3
+info:
+  title: Better Todos API
+  description: The API for a better todo list
+  version: 0.1.0
+
+servers:
+  - url: http://localhost:5000
+    description: The default address for the API
+
+security:
+  - cookieAuth: []
+
+paths:
+  /v1/authentication/register:
+    post:
+      summary: Create a new account
+      description: |
+        Create a new user account with the desired username and password for
+        authentication. Also associate a name with their login information.
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 256
+                  required: true
+                username:
+                  type: string
+                  minLength: 2
+                  maxLength: 64
+                  required: true
+                password:
+                  type: string
+                  minLength: 8
+                  required: true
+            example:
+              name: Alex Krantz
+              username: akrantz01
+              password: testing-password
+      responses:
+        '201':
+          description: Successfully registered the user
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '409':
+          description: The username is already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                code: 409
+                message: that username is already in use
+
+  /v1/authentication/login:
+    post:
+      summary: Login a user
+      description: |
+        Login a user by their username and password. Generates an authentication token
+        for the user if their credentials are valid.
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  required: true
+                password:
+                  type: string
+                  required: true
+            example:
+              username: akrantz01
+              password: testing-password
+      responses:
+        '201':
+          description: Successfully logged in and a token was generated
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: session=abcdefg12345; Path=/; HttpOnly
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/authentication/self:
+    get:
+      summary: Get the current user's details
+      description: Get all the public details about a user including their username and display name.
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: Successfully retrieved the user's information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                  name:
+                    type: string
+              example:
+                username: akrantz01
+                name: Alex Krantz
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      summary: Update the current user's details
+      description: |
+        Update a user's username, display name, and/or password. Any field not present in
+        the request will not be modified.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 256
+                  required: false
+                username:
+                  type: string
+                  minLength: 2
+                  maxLength: 64
+                  required: false
+                password:
+                  type: string
+                  minLength: 8
+                  required: false
+            example:
+              name: Testing User
+              username: testing
+              password: testing-password
+      responses:
+        '204':
+          description: Successfully updated the user
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/authentication/logout:
+    get:
+      summary: Logout the current user
+      description: Logout the current user by revoking their authentication token.
+      tags:
+        - Authentication
+      security: []
+      responses:
+        '204':
+          description: Successfully logged out the user
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/categories:
+    get:
+      summary: Get a user's categories
+      description: Get a list of all the categories created by the current user.
+      tags:
+        - Categories
+      responses:
+        '200':
+          description: Successfully got the user's categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+              example:
+                - id: 1
+                  name: School
+                  description: Homework, events, and such
+                - id: 2
+                  name: Projects
+                  description: Dates and deadlines for school projects
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      summary: Create a new category
+      description: |
+        Create a new category for todos with a name and an optional description. For the
+        description, null, absent, empty are treated as equivalent.
+      tags:
+        - Categories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 64
+                  required: true
+                  description: The name of the category
+                description:
+                  type: string
+                  required: false
+                  nullable: true
+                  description: Extra information about the category
+            example:
+              name: School
+              description: Homework, events, and such
+      responses:
+        '201':
+          description: Successfully created the category
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: The ID of the newly created category
+              example:
+                id: 2
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/categories/{id}:
+    put:
+      summary: Update a category
+      description: |
+        Change the name and/or description of a category by its ID. Similarly to creating
+        a category, null and empty are equivalent. However, if the description is not
+        included, it will not be updated.
+      tags:
+        - Categories
+      parameters:
+        - $ref: "#/components/parameters/Category"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 64
+                  required: false
+                  nullable: true
+                  description: The name of the category
+                description:
+                  type: string
+                  required: false
+                  nullable: true
+                  description: Extra information about the category
+            example:
+              name: Projects
+              description: Dates and deadlines for school projects
+      responses:
+        '204':
+          description: Successfully updated the category
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: Remove a category
+      description: Delete a category and remove it from any todos that were associated with it.
+      tags:
+        - Categories
+      parameters:
+        - $ref: "#/components/parameters/Category"
+      responses:
+        '204':
+          description: Successfully deleted the category
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+
+  /v1/categories/{id}/todos:
+    get:
+      summary: Get all the todos in a category
+      description: Retrieves all the todos a user has associated with the given category.
+      tags:
+        - Categories
+      parameters:
+        - $ref: "#/components/parameters/Category"
+      responses:
+        '200':
+          description: Successfully got all the todos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PartialTodo"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+
+  /v1/tags:
+    get:
+      summary: Get a user's tags
+      description: Get a list of all the tags a user has created for todos.
+      tags:
+        - Tags
+      responses:
+        '200':
+          description: Successfully got the user's tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tag"
+              example:
+                - id: 9
+                  name: Project 1
+                  color: fbad24
+                - id: 3
+                  name: Class 1
+                  color: e3913f
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      summary: Create a new tag
+      description: |
+        Create a new tag for a todo with a name and color. If a color is not provided,
+        one will be automatically generated.
+      tags:
+        - Tags
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 64
+                  required: true
+                  description: The name of the tag
+                color:
+                  type: string
+                  pattern: '^[0-9a-f]{6}$'
+                  required: false
+                  nullable: true
+                  description: The hex color of the tag without the `#`
+              example:
+                name: Class 1
+                color: e3913f
+      responses:
+        '201':
+          description: Successfully created the tag
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: The ID of the newly created tag
+              example:
+                id: 2
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/tags/{id}:
+    put:
+      summary: Update a tag
+      description: |
+        Change the name and/or color of the tag. If either value is not provided, it will not be modified.
+      tags:
+        - Tags
+      parameters:
+        - $ref: "#/components/parameters/Tag"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 64
+                  required: false
+                  nullable: true
+                  description: The name of the tag
+                color:
+                  type: string
+                  pattern: '^[0-9a-f]{6}$'
+                  required: false
+                  nullable: true
+                  description: The hex color of the tag without the `#`
+              example:
+                name: Project 1
+                color: fbad24
+      responses:
+        '204':
+          description: Successfully updated the tag
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: Remove a tag
+      description: Delete a tag and remove it from any todos that were associated with it.
+      tags:
+        - Tags
+      parameters:
+        - $ref: "#/components/parameters/Tag"
+      responses:
+        '204':
+          description: Successfully delete the tag
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+
+  /v1/tags/{id}/todos:
+    get:
+      summary: Get all the todos with the tag
+      description: Retrieves all the todos a user has associated with the given tag.
+      tags:
+        - Tags
+      parameters:
+        - $ref: "#/components/parameters/Tag"
+      responses:
+        '200':
+          description: Successfully got all the todos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PartialTodo"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+
+  /v1/todos:
+    get:
+      summary: List a user's todos
+      description: |
+        Get a list of all the todos for the current user. This returns partial todos
+        to reduce the amount of bandwidth required.
+      tags:
+        - Todos
+      responses:
+        '200':
+          description: Successfully got the user's todos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PartialTodo"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      summary: Create a new todo
+      description: |
+        Create a new todo for a user with some title. Optionally, it can also have a longer
+        description, a category, some tags, and a due date.
+      tags:
+        - Todos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+                  required: true
+                  description: A short title for the todo
+                content:
+                  type: string
+                  required: false
+                  nullable: true
+                  description: Extra information about the todo
+                due:
+                  type: string
+                  format: date-time
+                  required: false
+                  nullable: true
+                  description: The date and time when the todo is due
+                category:
+                  type: integer
+                  required: false
+                  nullable: true
+                  description: The ID of the category to associate with
+                tags:
+                  type: array
+                  description: Tags to add to the todo
+                  required: false
+                  nullable: true
+                  items:
+                    type: integer
+                    description: The ID of the tag to associate with
+            example:
+              title: Assignment 3
+              content: Some assignment for school
+              category: 4
+              tags: [9, 3]
+              due: 2021-08-25T23:59:59Z
+      responses:
+        '201':
+          description: Successfully created the todo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: The ID of the newly created todo
+              example:
+                id: 3
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/todos/{id}:
+    get:
+      summary: Get an individual todo
+      description: Retrieves detailed information about a todo
+      tags:
+        - Todos
+      parameters:
+        - $ref: "#/components/parameters/Todo"
+      responses:
+        '200':
+          description: Successfully got the todo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Todo"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+    put:
+      summary: Update a todo
+      description: |
+        Change descriptive information about a todo by its ID. Any field not present
+        in the request will not be updated. Any nullable field set to null will have
+        the current value removed.
+      tags:
+        - Todos
+      parameters:
+        - $ref: "#/components/parameters/Todo"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+                  required: false
+                  description: A short title for the todo
+                content:
+                  type: string
+                  required: false
+                  nullable: true
+                  description: Extra information about the todo
+                due:
+                  type: string
+                  format: date-time
+                  required: false
+                  nullable: true
+                  description: The date and time when the todo is due
+                category:
+                  type: integer
+                  required: false
+                  nullable: true
+                  description: The ID of the category to associate with
+                tags:
+                  type: array
+                  description: Tags to add to the todo
+                  required: false
+                  nullable: true
+                  items:
+                    type: integer
+                    description: The ID of the tag to associate with
+            example:
+              title: Assignment 3
+              content: null
+              category: 4
+              tags: null
+              due: 2021-08-25T23:59:59Z
+      responses:
+        '204':
+          description: Successfully updated the todo
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: Remove a todo
+      description: Deletes a todo from the database
+      tags:
+        - Todos
+      parameters:
+        - $ref: "#/components/parameters/Todo"
+      responses:
+        '204':
+          description: Successfully delete the todo
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+
+  /v1/todos/{id}/toggle:
+    post:
+      summary: Toggle a todo
+      description: Toggle a todo's complete status between true and false depending on its current state.
+      tags:
+        - Todos
+      parameters:
+        - $ref: "#/components/parameters/Todo"
+      responses:
+        '204':
+          description: Successfully modified the todo
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+
+components:
+  parameters:
+    Category:
+      in: path
+      name: id
+      schema:
+        type: integer
+      required: true
+      description: The category's ID
+      example: 4
+    Tag:
+      in: path
+      name: id
+      schema:
+        type: integer
+      required: true
+      description: The tag's ID
+      example: 2
+    Todo:
+      in: path
+      name: id
+      schema:
+        type: integer
+      required: true
+      description: The todo's ID
+      example: 1
+  responses:
+    BadRequest:
+      description: The request could not be processed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: 400
+            message: missing required fields
+    Forbidden:
+      description: The user's permissions are insufficient
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: 403
+            message: forbidden
+    NotFound:
+      description: The requested resource could not be found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: 404
+            message: not found
+    Unauthorized:
+      description: The provided credentials were incorrect
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: 401
+            message: unauthorized
+  schemas:
+    Category:
+      type: object
+      description: A category containing todos
+      properties:
+        id:
+          type: integer
+          description: The category's ID
+        name:
+          type: string
+          description: A short name for the category
+        description:
+          type: string
+          description: Extra information about the category
+    Error:
+      type: object
+      description: A generic error message
+      properties:
+        code:
+          type: integer
+          description: The HTTP status code
+        message:
+          type: string
+          description: A simplified message for why the error occurred
+    PartialTodo:
+      type: object
+      description: A stripped down version of a todo
+      properties:
+        id:
+          type: integer
+          description: The todo's ID
+        title:
+          type: string
+          description: A short title for the todo
+        complete:
+          type: boolean
+          description: Whether the todo was completed
+        category:
+          $ref: "#/components/schemas/Category"
+        tags:
+          type: array
+          description: The associated tags
+          items:
+            $ref: "#/components/schemas/Tag"
+        due:
+          type: string
+          description: When the item is due by
+      example:
+        id: 2
+        title: Assignment 3
+        complete: true
+        category:
+          id: 4
+          name: Projects
+          description: Dates and deadlines for school projects
+        tags:
+          - id: 9
+            name: Project 1
+            color: fbad24
+        due: 2021-08-25T23:59:59Z
+    Tag:
+      type: object
+      description: A tag for a todo
+      properties:
+        id:
+          type: integer
+          description: The tag's ID
+        name:
+          type: string
+          description: The name of the tag
+        color:
+          type: string
+          description: The hex color code for the tag
+    Todo:
+      type: object
+      description: The full information about a todo
+      properties:
+        id:
+          type: integer
+          description: The todo's ID
+        title:
+          type: string
+          description: A short title for the todo
+        content:
+          type: string
+          description: Extra information about the todo
+        complete:
+          type: boolean
+          description: Whether the todo was completed
+        category:
+          $ref: "#/components/schemas/Category"
+        tags:
+          type: array
+          description: The associated tags
+          items:
+            $ref: "#/components/schemas/Tag"
+        due:
+          type: string
+          description: When the item is due by
+          format: date-time
+        created_at:
+          type: string
+          description: When the todo was first created
+          format: date-time
+        last_updated:
+          type: string
+          description: When the todo was last updated
+          format: date-time
+      example:
+        id: 1
+        title: Quiz 1
+        description: A quiz on some school stuff
+        complete: false
+        category:
+          id: 8
+          name: School
+          description: Homework, events, and such
+        tags:
+          - id: 3
+            name: Class 1
+            color: e3913f
+        due: 2021-08-27T23:59:59Z
+        created_at: 2021-08-20T08:24:52Z
+        last_updated: 2021-08-22T13:36:39Z
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
+      description: An authentication token generated by `/auth/login`.
