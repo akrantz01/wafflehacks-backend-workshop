@@ -6,6 +6,7 @@ USERNAME = environ.get("AUTHENTICATION_USERNAME")
 PASSWORD = environ.get("AUTHENTICATION_PASSWORD")
 
 authentication = HTTPBasicAuth()
+login_required = authentication.login_required
 
 
 @authentication.verify_password
