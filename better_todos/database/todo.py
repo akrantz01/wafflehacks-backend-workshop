@@ -29,5 +29,5 @@ class Todo(db.Model):
 
     # Many-to-many relationship with tags
     tags = db.relationship(
-        "Tag", secondary=tags_todos, lazy=True, backref=db.backref("todos", lazy=True)
+        "Tag", secondary=tags_todos, lazy="subquery", backref=db.backref("todos", lazy=True)
     )

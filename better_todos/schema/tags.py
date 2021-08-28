@@ -13,4 +13,4 @@ class Tag(Base):
 
 # Derived schemas
 schema = Tag()
-update = Tag(partial=True)
+update_schema = Tag(partial=True)
