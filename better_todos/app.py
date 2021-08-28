@@ -1,7 +1,7 @@
 from flask import Flask
 from werkzeug.exceptions import HTTPException
 
-from . import blueprints, database, schema
+from . import blueprints, cors, database, schema
 
 
 # Configure the app
@@ -9,6 +9,7 @@ app = Flask(__name__)
 app.config.from_object("better_todos.config")
 
 # Setup dependencies
+cors.init(app)
 database.init(app)
 schema.init(app)
 
