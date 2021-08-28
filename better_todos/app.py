@@ -1,7 +1,7 @@
 from flask import Flask
 from werkzeug.exceptions import HTTPException
 
-from . import blueprints
+from . import blueprints, database
 
 
 # Configure the app
@@ -9,11 +9,12 @@ app = Flask(__name__)
 app.config.from_object("better_todos.config")
 
 # Setup dependencies
+database.init(app)
 
 
 # Register the blueprints (modules)
 for prefix, blueprint in blueprints.mapping.items():
-  app.register_blueprint(blueprint, url_prefix=prefix)
+    app.register_blueprint(blueprint, url_prefix=prefix)
 
 
 # Register any error handlers
