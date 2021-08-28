@@ -16,7 +16,9 @@ class Todo(db.Model):
     content = db.Column(db.Text)
     complete = db.Column(db.Boolean, default=False, nullable=False)
     due = db.Column(Timestamp(timezone=True), nullable=True)
-    created_at = db.Column(Timestamp(timezone=True), nullable=False, default=datetime.now)
+    created_at = db.Column(
+        Timestamp(timezone=True), nullable=False, default=datetime.now
+    )
     last_updated = db.Column(Timestamp(timezone=True), onupdate=datetime.now)
 
     # Many-to-one relationship with an optional category
